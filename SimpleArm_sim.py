@@ -290,7 +290,7 @@ def define_trajectories(args):
     """ Define each type of trajectory with the appropriate parameters."""
     trajectory = None
     if args.task == 'line':
-        trajectory = LinearTrajectory()
+        trajectory = LinearTrajectory(self.q, [])
     elif args.task == 'circle':
         trajectory = CircularTrajectory()
     elif args.task == 'polygon':
@@ -321,13 +321,20 @@ if __name__ == "__main__":
     # --------- Width and height in pixels of simulator. Adjust as needed -------- #
     width = 500
     height = 500
-
+    goal_point = np.array([0.5, 0.5, 0])
 
     # ------------------------- Initialize the trajectory ------------------------ #
     trajectory = define_trajectories(args)
 
     # ------------------------- Initialize the Simulator ------------------------- #
     sim = SimpleArmSim(width, height)
+
+    # --------- Check if the goal point is within the reachable workspace -------- #
+    # Check if is is not within the inner unreachable circle
+    if () { # to do that, check if the distance between the goal point and the origin is less than l1 - l2
+        
+    } 
+    # Check if it is     within the outer reachable circle
 
 
     # -------------------------- Define the controllers -------------------------- #
