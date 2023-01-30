@@ -14,6 +14,19 @@ import argparse
 C106B Project 1A
 """
 
+# ---------------------------------------------------------------------------- #
+#                                Debugging tools                               #
+# ---------------------------------------------------------------------------- #
+# let's use the pprint module for readability
+from pprint import pprint
+
+# import inspect module
+import inspect
+# ---------------------------------------------------------------------------- #
+#                                Debugging tools                               #
+# ---------------------------------------------------------------------------- #
+
+
 trajectory = None
 controller = None
 
@@ -60,6 +73,7 @@ class SimpleArmSim(pyglet.window.Window):
         self.time = 0
         self.batch = pyglet.graphics.Batch()
         self.pixel_origin = [width/2, 50]
+        
 
         # Constants for visualization
         link_w = 0.25
@@ -73,6 +87,7 @@ class SimpleArmSim(pyglet.window.Window):
         self.C_func = lambda q, q_dot: SimpleArm_dynamics.C_func(*(constants + [q, q_dot]))
         self.G_func = lambda q, q_dot: SimpleArm_dynamics.G_func(*(constants + [q, q_dot]))
         self.J_body_func = lambda q, q_dot: SimpleArm_dynamics.J_body_func(*(constants + [q, q_dot]))
+
 
         # ---------------------------------------------------------------------------- #
         #                          ROBOT ARM Manipulator Links                         #
@@ -117,6 +132,11 @@ class SimpleArmSim(pyglet.window.Window):
         # - Finally, we draw circles at the end of each link to visualize the trajectory.
         # ---------------------------------------------------------------------------- #
         if trajectory:
+
+            # ------------------ Check for trajectory reachability first ----------------- #
+            if not self.trajectory_reachable(trajectory):
+                raise Exception("Trajectory is not reachable!")
+            
             # Set initial configuration to trajectory start
             sol = self.ik(trajectory.target_pose(0)[:2]) # We only need xy, screw z
             self.q = sol
@@ -276,6 +296,73 @@ class SimpleArmSim(pyglet.window.Window):
         self.link2.x = junction[0]*self.pm + self.pixel_origin[0]
         self.link2.y = junction[1]*self.pm + self.pixel_origin[1]
 
+    def trajectory_reachable(self, trajectory):
+        '''
+        Check if the end effector is within the workspace of the manipulator.
+        If not, print a warning and exit the program.
+
+        Parameters
+        ----------
+        sim (SimpleArmSim): The simulation object
+        
+        Returns:
+        ----------    
+        bool: True if the end effector is within the workspace, False otherwise
+        '''
+        if trajectory.__class__.__name__ == 'LinearTrajectory':
+            # Check if Initial Position and Final Position is within the workspace
+            initial_position = trajectory.init_pos
+            final_position = trajectory.end_pos
+
+            # Strip the z coordinate
+            initial_position = initial_position[:2]
+            final_position = final_position[:2]
+
+            # # Boundary conditions
+            # if( initial_position[0]  > self.width or 
+            #     initial_position[1] > self.height or
+            #     final_position[0] > self.width or
+            #     final_position[1] > self.height or
+            #     initial_position[0] < 0 or
+            #     initial_position[1] < 0 or
+            #     final_position[0] < 0 or
+            #     final_position[1] < 0):
+            #     print("Initial Position is outside the workspace")
+            #     return False
+            
+            # Reachability conditions
+            inner_radius = self.l1 - self.l2
+            outer_radius = self.l1 + self.l2
+
+            # If the distance between the initial and final position with the origin is less than the inner radius, return False
+            origin = np.array([0, 0])
+            if (np.linalg.norm(initial_position - origin)<inner_radius):
+                print("Initial Position is within the inner radius")
+                return False
+            if (np.linalg.norm(final_position   - origin)<inner_radius):
+                print("Final Position is within the inner radius")
+                return False
+            if (np.linalg.norm(initial_position - origin)>outer_radius):
+                print("Initial Position = ", initial_position)
+                print("Initial Position is outside the outer radius")
+                return False
+            if (np.linalg.norm(final_position   - origin)>outer_radius):
+                print("Final Position is outside the outer radius")
+                return False
+
+            # Checking if the trajectory crosses the inner radius
+            # If the trajectory crosses the inner radius, return False
+            # idea: draw the line, if line passes the inner circle it is wrong
+            return True
+
+
+        elif trajectory.__class__.__name__ == 'CircularTrajectory':
+            
+            pass
+        elif trajectory.__class__.__name__ == 'PolygonalTrajectory':
+            trajectory = PolygonalTrajectory([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], 5)
+        return trajectory
+
 # ---------------------------------------------------------------------------- #
 #                            SimpleArmSim Class Ends                           #
 # ---------------------------------------------------------------------------- #
@@ -286,16 +373,20 @@ class SimpleArmSim(pyglet.window.Window):
 # ---------------------------------------------------------------------------- #
 #     Helper function to define the trajectory type from command line args     #
 # ---------------------------------------------------------------------------- #
-def define_trajectories(args):
+def define_trajectories(args, width, height):
     """ Define each type of trajectory with the appropriate parameters."""
     trajectory = None
     if args.task == 'line':
-        trajectory = LinearTrajectory(self.q, [])
+        trajectory = LinearTrajectory(total_time=3, init_pos=np.array([-2, 4, 0]), end_pos= np.array([2, 4, 0]))
     elif args.task == 'circle':
-        trajectory = CircularTrajectory()
+        trajectory = CircularTrajectory([0, 1, 1], [0, 0, 0], 1, 2)
     elif args.task == 'polygon':
-        trajectory = PolygonalTrajectory()
+        trajectory = PolygonalTrajectory([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], 5)
     return trajectory
+
+# ---------------------------------------------------------------------------- #
+#                             MAIN_HELPER_FUNCTIONS                            #
+# ---------------------------------------------------------------------------- #
 
 
 
@@ -321,21 +412,19 @@ if __name__ == "__main__":
     # --------- Width and height in pixels of simulator. Adjust as needed -------- #
     width = 500
     height = 500
+
+    # For Line Trajectory
     goal_point = np.array([0.5, 0.5, 0])
+    total_time = 3
+
+    # For Polygonal Trajectory
+    goal_points = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]])
 
     # ------------------------- Initialize the trajectory ------------------------ #
-    trajectory = define_trajectories(args)
+    trajectory = define_trajectories(args, width, height)
 
     # ------------------------- Initialize the Simulator ------------------------- #
-    sim = SimpleArmSim(width, height)
-
-    # --------- Check if the goal point is within the reachable workspace -------- #
-    # Check if is is not within the inner unreachable circle
-    if () { # to do that, check if the distance between the goal point and the origin is less than l1 - l2
-        
-    } 
-    # Check if it is     within the outer reachable circle
-
+    sim = SimpleArmSim(width, height)        
 
     # -------------------------- Define the controllers -------------------------- #
     if args.controller_name == 'jointspace':
