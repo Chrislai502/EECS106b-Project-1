@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import argparse
+import utils_kinematics as kin
 
 """
 Set of classes for defining SE(3) trajectories for the end effector of a robot 
@@ -306,6 +307,8 @@ class CircularTrajectory(Trajectory):
         self.prev_time = 0
         self.prev_ang_vel = 0
         self.curr_angle = 0
+        integral = (-self.total_time**3/3 + self.total_time**3/2)
+        self.b = 2*np.pi / integral
 
     def target_pose(self, time):
         """
@@ -332,7 +335,7 @@ class CircularTrajectory(Trajectory):
 
         # ------------------- Get the current angle of the end effector ---------------- #
         self.curr_angle = self.curr_angle + ang_travelled
-        # print("( time = " , time, ", ang_travelled = ", ang_travelled, ", ang_vel = ", self.quadratic_speed_model(time) , ", angle = " , self.curr_angle , ")")
+        print("( curr_angle: ", self.curr_angle, ", time = " , time, ", ang_travelled = ", ang_travelled, ", ang_vel = ", self.quadratic_speed_model(time) , ", angle = " , self.curr_angle , ")")
         self.prev_ang_vel = self.quadratic_speed_model(time)
 
         # ------------------- Get the current position of the end effector -------------- #
@@ -366,12 +369,12 @@ class CircularTrajectory(Trajectory):
         # print("distance = ", distance)
 
         # -------------------------- Find the coefficient b -------------------------- #
-        integral = (-self.total_time**3/3 + self.total_time**3/2)
-        b = distance / integral
+        # integral = (-self.total_time**3/3 + self.total_time**3/2)
+        # b = distance / integral
         # print("b = ", b)
         # print("denominator = ", (-self.total_time**3/3 + self.total_time**3/2))
 
-        temp = b * (-(time - self.total_time/2)**2 + (self.total_time/2)**2)
+        temp = self.b * (-(time - self.total_time/2)**2 + (self.total_time/2)**2)
         # print("temp_vel = ", temp)
         return temp #b * (-(time - self.total_time/2)**2 + (self.total_time/2)**2)
 
@@ -392,18 +395,26 @@ class CircularTrajectory(Trajectory):
         """
         # Calculate the magnitude of the angular velocity
         ang_vel = self.quadratic_speed_model(time) # in radians per second
-        print("ang_vel = ", ang_vel)
-        v_vector = ang_vel * self.radius
-        print("v_vector = ", v_vector)
-        x_dot = v_vector * np.cos(self.curr_angle)
-        y_dot = v_vector * np.sin(self.curr_angle)
-        print("x_dot = ", x_dot)
-        print("y_dot = ", y_dot)
-        v = np.array([x_dot, y_dot, 0, x_dot/self.radius, y_dot/self.radius, 0])
-        print("v = ", v)
+        # print("ang_vel = ", ang_vel)
+        # v_magnitude = ang_vel * self.radius
+        # print("v_vector = ", v_vector)
+        # x_dot = v_magnitude * np.cos(self.curr_angle)
+        # y_dot = v_magnitude * np.sin(self.curr_angle)
+        # print("x_dot = ", x_dot)
+        # print("y_dot = ", y_dot)
+        # v = np.array([x_dot, y_dot, 0, x_dot/self.radius, y_dot/self.radius, 0])
+        # print("v = ", v)
 
-        
-        return [0, 0, 0, 0, 0, 0]
+        # r = kin.spherical_to_cartesian(self.curr_angle, 0, self.radius)
+        # r = np.array([x, y, z])
+        # v = np.array([v_x, v_y, 0])
+
+        # v_t = np.cross(v, np.cross(r, v)) / np.linalg.norm(r)**2
+        current_angle = self.b*(-time**3/3 + self.total_time*time**2/2)
+        r_vec = self.radius * ang_vel * np.array([ - np.sin(current_angle), np.cos(current_angle), 0])
+        ret_val = np.array([r_vec[0],r_vec[1],r_vec[2], 0,0,ang_vel])
+        print("ret_val, ", ret_val, ", angle (radians): ", current_angle)
+        return ret_val
 
 
 
