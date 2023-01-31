@@ -339,7 +339,7 @@ class CircularTrajectory(Trajectory):
         self.prev_ang_vel = self.quadratic_speed_model(time)
 
         # ------------------- Get the current position of the end effector -------------- #
-        curr_pos = np.array([self.center[0] + self.radius*np.cos(self.curr_angle), 0, self.center[1] + self.radius*np.sin(self.curr_angle), 0, 1, 0, 0]) # add initial offset to where the robot is starting the circle
+        curr_pos = np.array([self.center[0] + self.radius*np.cos(self.curr_angle), self.center[1] + self.radius*np.sin(self.curr_angle), 0, 1, 0, 0]) # add initial offset to where the robot is starting the circle
         self.prev_time = time
         return curr_pos
 
@@ -578,7 +578,7 @@ def define_trajectories(args):
     if args.task == 'line':
         trajectory = LinearTrajectory(total_time=3, init_pos=np.array([5,0,0]), end_pos= np.array([5,30,0]))
     elif args.task == 'circle':
-        trajectory = CircularTrajectory([0, 1, 1], [0, 0, 0], 1, 2)
+        trajectory = CircularTrajectory([0, 0, 1], [0, 10, 0], 1, 10)
     elif args.task == 'polygon':
         trajectory = PolygonalTrajectory([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], 5)
     return trajectory

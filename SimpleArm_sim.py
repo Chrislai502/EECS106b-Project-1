@@ -379,7 +379,7 @@ def define_trajectories(args, width, height):
     if args.task == 'line':
         trajectory = LinearTrajectory(total_time=3, init_pos=np.array([-2, 4, 0]), end_pos= np.array([2, 4, 0]))
     elif args.task == 'circle':
-        trajectory = CircularTrajectory([0, 1, 1], [0, 0, 0], 1, 2)
+        trajectory = CircularTrajectory([0, 0, 1], [0, 8, 0], 3, 5)
     elif args.task == 'polygon':
         trajectory = PolygonalTrajectory(np.array([[-2, 4, 0], [2, 4, 0], [2, 8, 0], [-2, 8, 0]]), 5)
     return trajectory
