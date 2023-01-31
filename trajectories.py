@@ -332,7 +332,7 @@ class CircularTrajectory(Trajectory):
 
         # ------------------- Get the current angle of the end effector ---------------- #
         self.curr_angle = self.curr_angle + ang_travelled
-        print("( time = " , time, ", ang_travelled = ", ang_travelled, ", ang_vel = ", self.quadratic_speed_model(time) , ", angle = " , self.curr_angle , ")")
+        # print("( time = " , time, ", ang_travelled = ", ang_travelled, ", ang_vel = ", self.quadratic_speed_model(time) , ", angle = " , self.curr_angle , ")")
         self.prev_ang_vel = self.quadratic_speed_model(time)
 
         # ------------------- Get the current position of the end effector -------------- #
@@ -392,8 +392,23 @@ class CircularTrajectory(Trajectory):
         """
         # Calculate the magnitude of the angular velocity
         ang_vel = self.quadratic_speed_model(time) # in radians per second
+        print("ang_vel = ", ang_vel)
+        v_vector = ang_vel * self.radius
+        print("v_vector = ", v_vector)
+        x_dot = v_vector * np.cos(self.curr_angle)
+        y_dot = v_vector * np.sin(self.curr_angle)
+        print("x_dot = ", x_dot)
+        print("y_dot = ", y_dot)
+        v = np.array([x_dot, y_dot, 0, x_dot/self.radius, y_dot/self.radius, 0])
+        print("v = ", v)
 
-        return [0, 0, 0, self.axis[0]*ang_vel, self.axis[1]*ang_vel, self.axis[2]*ang_vel]
+        
+        return [0, 0, 0, 0, 0, 0]
+
+
+
+
+
 
 
 # ---------------------------------------------------------------------------- #

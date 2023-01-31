@@ -381,7 +381,7 @@ def define_trajectories(args, width, height):
     elif args.task == 'circle':
         trajectory = CircularTrajectory([0, 1, 1], [0, 0, 0], 1, 2)
     elif args.task == 'polygon':
-        trajectory = PolygonalTrajectory([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], 5)
+        trajectory = PolygonalTrajectory(np.array([[-2, 4, 0], [2, 4, 0], [2, 8, 0], [-2, 8, 0]]), 5)
     return trajectory
 
 # ---------------------------------------------------------------------------- #
